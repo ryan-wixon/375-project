@@ -1,0 +1,129 @@
+---
+title: "ICA 18"
+author: "Ryan Wixon"
+format: html
+include-in-header: 
+  text: |
+    \usepackage{fvextra}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+---
+
+```{r libraries, include=FALSE}
+library(dplyr)
+```
+
+## In Class Activity - Simulation and Reproducibility
+
+## Task 1
+**Complete this task in whichever language you prefer**
+
+Consider the function $$g(x)=\left(\cos(50x)+\sin(20x)\right)^2$$ on the unit interval.
+
+a. Write a function that represents $g(x)$. Test that it works for the value $0.5$, $g(0.5)=0.1999715$
+
+``` {r}
+g <- function(x) {
+  retval = cos(50 * x) + sin(20 * x)
+  
+  return(retval * retval)
+}
+
+g(0.5)
+```
+
+b. Write a function that will compute the Monte Carlo Integral for a function on any interval. (For a reminder about how Monte Carlo Integration works, refer to the textbook or ask your favorite AI Bot.)
+
+``` {r}
+monte_carlo <- function(run_size) {
+  retval = 0
+  
+  x_vals <- runif(run_size)
+  for (x in x_vals) {
+    retval = retval + g(x)  
+  }
+  
+  return(retval / run_size)
+}
+```
+
+c. Using run sizes of 10, 100, 1,000, 10,000, 100,000 and 1,000,000. Use your Monte Carlo Integration function to estimate the integral. Compare these to the actual value of $\approx 0.96520$. What do you notice? (Use seed 117241)
+
+``` {r}
+set.seed(117241)
+
+monte_carlo(10)
+monte_carlo(100)
+monte_carlo(1000)
+monte_carlo(10000)
+monte_carlo(100000)
+monte_carlo(1000000)
+```
+As the run sizes grows, there is less variance between the results, and the answers converge to the accurate answer of 0.96520.
+
+
+### Task 2
+**Complete this task in the language you did not use for Task 1**
+A simple electronic device consists of two components which have failure times which may be modeled as independent exponential random variables. The first component has a mean time to failure of 3 months, and the second has a mean time to failure of 6 months.
+
+a. Suppose the electronic device will fail when either of the components fails. Use simulation to estimate the mean and variance of the time to failure for the device.
+
+``` {python}
+import random
+import numpy as np
+
+component_1 = np.random.exponential(3, 1000)
+component_2 = np.random.exponential(6, 1000)
+
+device = []
+for i in range(10):
+  device.append(min(component_1[i], component_2[i]))
+  
+print(f"Simulation mean: {np.mean(device):.3}")
+print(f"Simulation variance: {np.var(device):.3}")
+```
+
+b. Suppose the electronic device will fail when both of the components fail. Use simulation to estimate the mean and variance of the time to failure for the device.
+
+``` {python}
+component_1 = np.random.exponential(3, 1000)
+component_2 = np.random.exponential(6, 1000)
+
+device = []
+for i in range(10):
+  device.append(max(component_1[i], component_2[i]))
+  
+print(f"Simulation mean: {np.mean(device):.3}")
+print(f"Simulation variance: {np.var(device):.3}")
+```
+
+### Task 3
+Markov Chains are powerful tools to use for simulation to give long run probabilities which can be used to forecast future events (weather, stocks, etc). We will use this task to gain some insight into how these work.
+
+a. Using your favorite AI platform, do some research into what a Markov process is. Report the key features here.
+
+A Markov Chain is a process describing a sequence of events where every probability dynamically changes with the current state of the simulation. Each probability is determined by what just happened. For example, a simulation could start in state A and have a 30% chance of switching to state B and a 70% chance of staying in phase A. But if it does switch to state B, it could have a 40% chance of switching back instead. Thus, the chances of being in state A on the next "step" could be 70% or 40%, depending on the current state.
+
+b. Part of the Markov process and chain is a transition matrix. Describe what this is.
+
+A transition matrix is a special matrix that contains the probabilities of each state. If there were 5 states, it would need to be a 5x5 matrix where each row represents state and each column represents the probability of switching to a different state, as well as the probability of not switching at all.
+
+c. Continue your research and learn how to simulate such a process. Describe what you learn about it.
+
+First choose an initial starting state. Once it is chosen, then use the relevant information in the transition matrix to determine the probabilities of switching to a different state, and use random numbers to determine what the next step should be. Once the next state has been determined, simply repeat as long as required. 
+
+### Task 4
+Now let's implement a Markov chain simulation. Consider a model of a disease with three stages. Stage 1 is healthy, stage 2 is mild disease, and stage 3 is severe disease. Healthy individuals remain healthy with probability 0.99 and develop mild disease with probability 0.01. Individuals with mild disease are cured and become healty with probability 0.5, remain with mild disease with probability 0.4 and progress to serious disease with probability 0.1. Finally, those with severe disease stay in that state with probability 0.75, and improve to mild disease with probability 0.25.
+
+a. Why does this situation describe a Markov Process?
+
+The patient's chances of becoming (or staying) healthy are different depending on the severity of their disease.
+
+b. What is the transition matrix?
+c. Simulate 10,000 steps for a person who starts healthy. (Make sure to save all steps and output a table that shows the outcome after all steps)
+d. Simulate 10,000 steps for a person who starts with severe disease.(Make sure to save all steps and output a table that shows the outcome after all steps)
+e. What do you notice about the resulting outcomes for both patients?
+
+
+
+
+

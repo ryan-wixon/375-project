@@ -1,0 +1,161 @@
+---
+title: "Final Project"
+format: html
+editor: visual
+---
+
+```{r}
+library(readr) #import library
+obesity <- read_csv("obes.csv") #reading in the dataframe we are working with
+head(obesity)#show first 5 rows
+```
+
+```{r}
+library(dplyr)#import library
+obes<-filter(obesity, YearStart %in% c(2015, 2016, 2017, 2018, 2019))#filtering the dataframe so it only displays rows that are in the years 2015-2019
+obes
+```
+
+```{r}
+obes<-filter(obes, Topic== 'Obesity')#filters the dataframe to only include rows that have a Topic of Obesity 
+obes
+```
+
+```{r}
+obes1<-arrange(obes, LocationDesc)#Arrange the dataframe by the LocationDesc column to sort the data alphabetically by location description
+obes1
+```
+
+```{r}
+obes2 <- obes1 %>%
+  select(-RowId, -LocationAbbr, -Datasource, -Data_Value_Footnote_Symbol, -Geolocation, -ClassID, -TopicID, -QuestionID, -LocationID, -YearEnd) #drops columns RowId, LocationAbbr, Datasource, Data_Value_Footnote_Symbol, Geolocation, ClassID, TopicID, QuestionID, LocationID, YearEnd
+obes2
+```
+
+```{r}
+obes3<-arrange(obes2, YearStart)#Arrange the dataframe by the YearStart column to sort the data numerically by year
+obes3
+```
+
+```{r}
+obes3 <- obes3 %>%
+  rename(
+    Date = YearStart, # Rename the YearStart column to 'Date' for clarity
+    State = LocationDesc)# Rename the 'LocationDesc column to 'State' for clarity
+obes3
+```
+
+```{r}
+ppi <- read_csv("ProductPriceIndex.csv") #read in second dataframe
+head(ppi) #show first 5 rows
+```
+
+```{r}
+library(lubridate)#import library
+ppi$Year <- year(ymd(ppi$date))# Create a new column 'Year' in the 'ppi' dataframe
+# ymd(ppi$date): This function converts the 'date' column in 'ppi' to Date format (Year-Month-Day).
+# year(): This function extracts the year from the Date object created.
+ppi
+```
+
+```{r}
+ppi<-select(ppi, -date, - farmprice)#removes columns date and farmprice
+ppi
+```
+
+```{r}
+ppi<-ppi%>%
+  select(Year, everything())#selects the column year and moves it to be the first column displayed and everything else after
+ppi
+```
+
+```{r}
+ppi2<- ppi %>%
+  rename(
+    Georgia = atlantaretail, #renames atlantaretail column to Georgia
+    Illinois = chicagoretail, #renames chicagoretail column to Illinois
+    California = losangelesretail,#renames losangelesretail column to California
+    NewYork = newyorkretail,#renames newyorkretail column to NewYork
+    Date = Year) #renames Year column to Date 
+ppi2
+```
+
+```{r}
+library(tidyverse)#import libraries
+# Transform the dataframe from a wide format to a long format
+# This function reshapes the dataframe so that columns Georgia, Illinois, California, and NewYork are combined into a single column 'State'.
+# cols: Specifies the columns to pivot (Georgia, Illinois, California, NewYork).
+# names_to: The new column name that will contain the original column names after transformation (State).
+# values_to: The new column name for the data values from the original columns (Price).
+ppi22 <- ppi2 %>%
+  pivot_longer(cols = c(Georgia, Illinois, California, NewYork),
+               names_to = "State",
+               values_to = "Price")
+ppi22
+```
+
+```{r}
+ppi22<-ppi22%>%
+  select(Date, productname, State, Price, averagespread)#selects the columns so they are displayed in the order of Date, productname, State, Price, averagespread
+ppi22
+```
+
+```{r}
+# Perform an inner join between the 'ppi22' and 'obes3' dataframes
+# The result is a new dataframe 'join' that contains only rows where there is a match in the 'Date' and 'State' columns between 'ppi22' and 'obes3'.
+join<-inner_join(ppi22, obes3)
+join
+```
+``` {r}
+# get and list the names of unique fruits and vegetables
+product_names <- unique(join$productname)
+for (i in 1:length(product_names)) {
+  product_names[i] <- tolower(product_names[i])
+  print(sprintf("%d: %s", i, product_names[i]))
+}
+
+# print out prompts for the user
+print("Please choose 1 or more products to include in analysis")
+print("Enter your choices as a comma separated list of numbers or names:")
+```
+
+``` {r}
+# get the user input
+user_input <- readline()
+```
+
+``` {r}
+# validate user input
+user_input <- strsplit(user_input, ",")[[1]]
+valid_names <- c()
+for (i in 1:length(user_input)) {
+  
+  # check the user input name for an item and add it too the list if it matches
+  # one in the list
+  if (tolower(trimws(user_input[i])) %in% product_names) {
+    valid_names <- c(valid_names, tolower(trimws(user_input[i])))
+  }
+  
+  # try to convert the string to a number, if it succeeds and is valid, add
+  # the corresponding product to the list
+  integer_format <- as.integer(tolower(trimws(user_input[i])))
+  if (!is.na(integer_format) && integer_format > 0 && integer_format < 23) {
+    valid_names <- c(valid_names, product_names[integer_format])
+  }
+}
+
+# check to make sure there was at least one valid product specified, if there
+# is not we will be unable to perform analysis, so quit immediately
+if (length(valid_names) == 0) {
+  stop("No valid fruit/vegetable names specified by user, quitting")
+}
+```
+
+``` {r}
+# update the elements in the database to match the names we just found
+join$productname <- tolower(join$productname)
+
+# now take the new list of names and filter the dataset accordingly
+final_dataset <- join[join$productname %in% valid_names, ]
+head(final_dataset)
+```

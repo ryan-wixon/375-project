@@ -85,8 +85,8 @@ ppi
 ```
 
 ```{r}
-# removes columns, date, and farmprice
-ppi <-select(ppi, -date, - farmprice)
+# removes columns date, farmprice, and averagespread
+ppi <-select(ppi, -date, -farmprice, -averagespread)
 ppi
 ```
 
@@ -125,9 +125,9 @@ ppi22
 ```
 
 ```{r}
-# selects the columns so they are displayed in the order of Date, productname, State, Price, averagespread
+# selects the columns so they are displayed in the order of Date, productname, State, Price
 ppi22 <- ppi22%>%
-  select(Date, productname, State, Price, averagespread)
+  select(Date, productname, State, Price)
 ppi22
 ```
 
@@ -189,4 +189,60 @@ join$productname <- tolower(join$productname)
 # now take the new list of names and filter the dataset accordingly
 final_dataset <- join[join$productname %in% valid_names, ]
 final_dataset
+```
+
+```{r}
+# import libraries
+library(ggplot2)
+
+# Remove dollar signs from Price and convert to numeric
+data_clean <- join %>% mutate(Price = as.numeric(gsub("\\$", "", Price)), 
+  Data_Value = as.numeric(Data_Value)) %>%  # Convert Data_Value column to numeric
+  filter(!is.na(Price) & !is.na(Data_Value)) %>%  # Filter out rows with missing Price or Data_Value
+  
+# Group by State column and summarize to get the average price and data value per state
+group_by(State) %>% summarize(avg_price = mean(Price), avg_data_value = mean(Data_Value))
+
+# Plotting the average price per state
+ggplot(data_clean, aes(x = State, y = avg_price, fill = State)) +
+  geom_col() + # Create a column plot for average price 
+  geom_text(aes(label = round(avg_price, 2)))  # Add text showing exact values 
+  labs(title = "Average Price per State", # label for title, x-axis, and y-axis
+       y = "Average Price",
+       x = "State")
+```
+
+```{r}
+# Plotting the  average obesity percentage per state
+ggplot(data_clean, aes(x = State, y = avg_data_value, fill = State)) +
+  geom_col() + # Create a column plot for average obesity percentage
+  geom_text(aes(label = round(avg_data_value, 2))) # Add text showing exact values 
+  labs(title = "Average Obesity Perctange Per State", # label for title, x-axis, and y-axis
+       y = "Average Obesity Perctange",
+       x = "State")
+```
+
+``` {r}
+correlation_dataset = final_dataset
+
+# use regex to remove the $ from the price and convert it to a double
+correlation_dataset$Price <- as.numeric(sub('.', '', correlation_dataset$Price))
+
+# some rows include items with values recorded on different days of the
+# same year, let's aggregate them so that the average values for each years are used
+# instead so that it matches the obesity data
+correlation_dataset <- correlation_dataset %>% group_by(Date, productname, State) %>% summarize(Price = mean(Price), Data_Value = mean(Data_Value))
+
+# get the necessary columns for calculating the correlation
+correlation_dataset <- correlation_dataset %>% select(productname, State, Price, Data_Value)
+
+for (i in 1:length(valid_names)) {
+  
+  # remove all items except for the one currently being analyzed, and plot it
+  single_item_correlation_dataset <- filter(correlation_dataset, productname == valid_names[i])
+  plot(single_item_correlation_dataset$Price, single_item_correlation_dataset$Data_Value, xlab = paste("Price of", valid_names[i], "($)", sep = " "), ylab = "Obesity Rates (% of American Adults)", main = paste("Correlation:", cor(single_item_correlation_dataset$Price, single_item_correlation_dataset$Data_Value), sep=" "))
+}
+
+# make a correlation plot accounting for every item
+plot(correlation_dataset$Price, correlation_dataset$Data_Value, xlab = "Price of all items ($)", ylab = "Obesity Rates (% of American Adults)", main = paste("Correlation:", cor(single_item_correlation_dataset$Price, single_item_correlation_dataset$Data_Value), sep=" "))
 ```

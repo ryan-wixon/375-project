@@ -5,35 +5,54 @@ editor: visual
 ---
 
 ```{r}
-library(readr) #import library
-obesity <- read_csv("obes.csv") #reading in the dataframe we are working with
-head(obesity)#show first 5 rows
+# import library
+library(readr) 
+
+# reading in the dataframe we are working with
+obesity <- read_csv("obes.csv") 
+
+# show first 6 rows
+head(obesity)
 ```
 
 ```{r}
-library(dplyr)#import library
-obes<-filter(obesity, YearStart %in% c(2015, 2016, 2017, 2018, 2019))#filtering the dataframe so it only displays rows that are in the years 2015-2019
+# import library
+library(dplyr)
+
+# filtering the dataframe so it only displays rows that are in the years 2015-2019
+obes <- filter(obesity, YearStart %in% c(2015, 2016, 2017, 2018, 2019))
 obes
 ```
 
 ```{r}
-obes<-filter(obes, Topic== 'Obesity')#filters the dataframe to only include rows that have a Topic of Obesity 
+# filters the dataframe to only include rows that have a Topic of Obesity 
+obes <- filter(obes, Topic == 'Obesity')
 obes
 ```
 
 ```{r}
-obes1<-arrange(obes, LocationDesc)#Arrange the dataframe by the LocationDesc column to sort the data alphabetically by location description
+# Arrange the dataframe by the LocationDesc column to sort the data alphabetically by location description
+obes1 <- arrange(obes, LocationDesc)
 obes1
 ```
 
 ```{r}
+# select only the columns that are relevant to our analysis
 obes2 <- obes1 %>%
-  select(-RowId, -LocationAbbr, -Datasource, -Data_Value_Footnote_Symbol, -Geolocation, -ClassID, -TopicID, -QuestionID, -LocationID, -YearEnd) #drops columns RowId, LocationAbbr, Datasource, Data_Value_Footnote_Symbol, Geolocation, ClassID, TopicID, QuestionID, LocationID, YearEnd
+  select(YearStart, LocationDesc, Question, Data_Value) 
 obes2
 ```
 
 ```{r}
-obes3<-arrange(obes2, YearStart)#Arrange the dataframe by the YearStart column to sort the data numerically by year
+# Arrange the dataframe by the YearStart column to sort the data numerically by year
+obes3 <- arrange(obes2, YearStart)
+obes3
+```
+
+```{r}
+# Drop na values and aggregate each row using means so that each state has 1 row for each year
+obes3 <- na.omit(obes3)
+obes3 <- obes3 %>% group_by(YearStart, LocationDesc) %>% summarize(Data_Value = mean(Data_Value))
 obes3
 ```
 
@@ -41,49 +60,60 @@ obes3
 obes3 <- obes3 %>%
   rename(
     Date = YearStart, # Rename the YearStart column to 'Date' for clarity
-    State = LocationDesc)# Rename the 'LocationDesc column to 'State' for clarity
+    State = LocationDesc) # Rename the 'LocationDesc column to 'State' for clarity
 obes3
 ```
 
 ```{r}
-ppi <- read_csv("ProductPriceIndex.csv") #read in second dataframe
-head(ppi) #show first 5 rows
+# read in second dataframe
+ppi <- read_csv("ProductPriceIndex.csv")
+
+# show first 5 rows
+head(ppi) 
 ```
 
 ```{r}
-library(lubridate)#import library
-ppi$Year <- year(ymd(ppi$date))# Create a new column 'Year' in the 'ppi' dataframe
-# ymd(ppi$date): This function converts the 'date' column in 'ppi' to Date format (Year-Month-Day).
+# import library
+library(lubridate)
+
+# Create a new column 'Year' in the 'ppi' dataframe
+# ymd(ppi$date): This function converts the 'date' column in 'ppi' to Date format (Year-Month-Day)
+ppi$Year <- year(ymd(ppi$date))
+
 # year(): This function extracts the year from the Date object created.
 ppi
 ```
 
 ```{r}
-ppi<-select(ppi, -date, - farmprice)#removes columns date and farmprice
+# removes columns, date, and farmprice
+ppi <-select(ppi, -date, - farmprice)
 ppi
 ```
 
 ```{r}
-ppi<-ppi%>%
-  select(Year, everything())#selects the column year and moves it to be the first column displayed and everything else after
+# selects the column year and moves it to be the first column displayed and everything else after
+ppi <-ppi %>%
+  select(Year, everything())
 ppi
 ```
 
 ```{r}
-ppi2<- ppi %>%
+ppi2 <- ppi %>%
   rename(
-    Georgia = atlantaretail, #renames atlantaretail column to Georgia
-    Illinois = chicagoretail, #renames chicagoretail column to Illinois
-    California = losangelesretail,#renames losangelesretail column to California
-    NewYork = newyorkretail,#renames newyorkretail column to NewYork
-    Date = Year) #renames Year column to Date 
+    Georgia = atlantaretail, # renames atlantaretail column to Georgia
+    Illinois = chicagoretail, # renames chicagoretail column to Illinois
+    California = losangelesretail,# renames losangelesretail column to California
+    NewYork = newyorkretail,# renames newyorkretail column to NewYork
+    Date = Year) # renames Year column to Date 
 ppi2
 ```
 
 ```{r}
-library(tidyverse)#import libraries
+# import libraries
+library(tidyverse)
+
 # Transform the dataframe from a wide format to a long format
-# This function reshapes the dataframe so that columns Georgia, Illinois, California, and NewYork are combined into a single column 'State'.
+# This function reshapes the dataframe so that columns Georgia, Illinois, California, and New York are combined into a single column 'State'.
 # cols: Specifies the columns to pivot (Georgia, Illinois, California, NewYork).
 # names_to: The new column name that will contain the original column names after transformation (State).
 # values_to: The new column name for the data values from the original columns (Price).
@@ -95,15 +125,16 @@ ppi22
 ```
 
 ```{r}
-ppi22<-ppi22%>%
-  select(Date, productname, State, Price, averagespread)#selects the columns so they are displayed in the order of Date, productname, State, Price, averagespread
+# selects the columns so they are displayed in the order of Date, productname, State, Price, averagespread
+ppi22 <- ppi22%>%
+  select(Date, productname, State, Price, averagespread)
 ppi22
 ```
 
 ```{r}
 # Perform an inner join between the 'ppi22' and 'obes3' dataframes
 # The result is a new dataframe 'join' that contains only rows where there is a match in the 'Date' and 'State' columns between 'ppi22' and 'obes3'.
-join<-inner_join(ppi22, obes3)
+join <- inner_join(ppi22, obes3)
 join
 ```
 ``` {r}
@@ -157,5 +188,5 @@ join$productname <- tolower(join$productname)
 
 # now take the new list of names and filter the dataset accordingly
 final_dataset <- join[join$productname %in% valid_names, ]
-head(final_dataset)
+final_dataset
 ```

@@ -103,7 +103,7 @@ ppi2 <- ppi %>%
     Georgia = atlantaretail, # renames atlantaretail column to Georgia
     Illinois = chicagoretail, # renames chicagoretail column to Illinois
     California = losangelesretail,# renames losangelesretail column to California
-    NewYork = newyorkretail,# renames newyorkretail column to NewYork
+    `New York` = newyorkretail,# renames newyorkretail column to NewYork
     Date = Year) # renames Year column to Date 
 ppi2
 ```
@@ -118,7 +118,7 @@ library(tidyverse)
 # names_to: The new column name that will contain the original column names after transformation (State).
 # values_to: The new column name for the data values from the original columns (Price).
 ppi22 <- ppi2 %>%
-  pivot_longer(cols = c(Georgia, Illinois, California, NewYork),
+  pivot_longer(cols = c(Georgia, Illinois, California, `New York`),
                names_to = "State",
                values_to = "Price")
 ppi22

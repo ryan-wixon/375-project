@@ -137,7 +137,8 @@ ppi22
 join <- inner_join(ppi22, obes3)
 join
 ```
-``` {r}
+
+```{r}
 # get and list the names of unique fruits and vegetables
 product_names <- unique(join$productname)
 for (i in 1:length(product_names)) {
@@ -150,12 +151,19 @@ print("Please choose 1 or more products to include in analysis")
 print("Enter your choices as a comma separated list of numbers or names:")
 ```
 
-``` {r}
-# get the user input
-user_input <- readline()
+```{r}
+# when compiling an html document, the readline() call is skipped; this line sets a default value so the program can continue, but the value is overwritten when the code is run in an interactive session
+if (!interactive()) {
+  user_input <- "1, 2, 3"
+  
+} else {
+  
+  # get the user input
+  user_input <- readline() 
+}
 ```
 
-``` {r}
+```{r}
 # validate user input
 user_input <- strsplit(user_input, ",")[[1]]
 valid_names <- c()
@@ -182,7 +190,7 @@ if (length(valid_names) == 0) {
 }
 ```
 
-``` {r}
+```{r}
 # update the elements in the database to match the names we just found
 join$productname <- tolower(join$productname)
 
@@ -222,7 +230,7 @@ ggplot(data_clean, aes(x = State, y = avg_data_value, fill = State)) +
        x = "State")
 ```
 
-``` {r}
+```{r}
 correlation_dataset = final_dataset
 
 # remove any stray NA values that made it through

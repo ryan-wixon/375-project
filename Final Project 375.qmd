@@ -225,24 +225,45 @@ ggplot(data_clean, aes(x = State, y = avg_data_value, fill = State)) +
 ``` {r}
 correlation_dataset = final_dataset
 
+# remove any stray NA values that made it through
+correlation_dataset <- na.omit(correlation_dataset)
+
 # use regex to remove the $ from the price and convert it to a double
 correlation_dataset$Price <- as.numeric(sub('.', '', correlation_dataset$Price))
 
 # some rows include items with values recorded on different days of the
 # same year, let's aggregate them so that the average values for each years are used
 # instead so that it matches the obesity data
-correlation_dataset <- correlation_dataset %>% group_by(Date, productname, State) %>% summarize(Price = mean(Price), Data_Value = mean(Data_Value))
+correlation_dataset <- correlation_dataset %>% 
+  group_by(Date, productname, State) %>% 
+  summarize(Price = mean(Price), Data_Value = mean(Data_Value))
 
 # get the necessary columns for calculating the correlation
 correlation_dataset <- correlation_dataset %>% select(productname, State, Price, Data_Value)
 
+# Loop through each product to calculate and plot the correlation for each
 for (i in 1:length(valid_names)) {
   
-  # remove all items except for the one currently being analyzed, and plot it
+  # Filter the dataset for the current product
   single_item_correlation_dataset <- filter(correlation_dataset, productname == valid_names[i])
-  plot(single_item_correlation_dataset$Price, single_item_correlation_dataset$Data_Value, xlab = paste("Price of", valid_names[i], "($)", sep = " "), ylab = "Obesity Rates (% of American Adults)", main = paste("Correlation:", cor(single_item_correlation_dataset$Price, single_item_correlation_dataset$Data_Value), sep=" "))
+  
+  # Remove rows with NA values from the subset
+  single_item_correlation_dataset <- na.omit(single_item_correlation_dataset)
+  
+  # Plot the correlation for the current product
+  plot(single_item_correlation_dataset$Price, single_item_correlation_dataset$Data_Value, 
+       xlab = paste("Price of", valid_names[i], "($)", sep = " "), 
+       ylab = "Obesity Rates (% of American Adults)", 
+       main = paste("Correlation:", cor(single_item_correlation_dataset$Price, single_item_correlation_dataset$Data_Value), sep=" "))
 }
 
-# make a correlation plot accounting for every item
-plot(correlation_dataset$Price, correlation_dataset$Data_Value, xlab = "Price of all items ($)", ylab = "Obesity Rates (% of American Adults)", main = paste("Correlation:", cor(single_item_correlation_dataset$Price, single_item_correlation_dataset$Data_Value), sep=" "))
+# Ensure NA values are handled for the full dataset correlation
+# Use the 'use = "complete.obs"' parameter to handle NA values
+correlation_value_full <- cor(correlation_dataset$Price, correlation_dataset$Data_Value, use = "complete.obs")
+
+# Plot the full dataset correlation
+plot(correlation_dataset$Price, correlation_dataset$Data_Value, 
+     xlab = "Price of all items ($)", 
+     ylab = "Obesity Rates (% of American Adults)", 
+     main = paste("Correlation:", cor(correlation_dataset$Price, correlation_dataset$Data_Value, use = "complete.obs"), sep=" "))
 ```
